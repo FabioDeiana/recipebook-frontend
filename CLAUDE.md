@@ -16,7 +16,7 @@ The backend is a separate, finished project (Spring Boot) in `C:\Users\fdeia\Des
 - React + Vite, dev server on http://localhost:5173 (the backend's default CORS origin)
 - Backend on http://localhost:8080 — keep the base URL in `.env` as `VITE_API_URL=http://localhost:8080`, never hardcode it
 - Images: uploaded from the browser straight to Cloudinary (unsigned preset), see `src/api/cloudinary.js`; `.env` has `VITE_CLOUDINARY_CLOUD_NAME` and `VITE_CLOUDINARY_UPLOAD_PRESET`. The backend only stores the URL in `imageUrl` (max 255)
-- Deploy: Netlify; `public/_redirects` sends every path to `index.html` for client-side routing. Online, the `VITE_*` variables are set in Netlify, and the frontend's URL goes into the backend's `CORS_ALLOWED_ORIGINS`
+- Deploy: frontend on Vercel (`vercel.json` rewrites every path to `index.html` for client-side routing; the `VITE_*` variables are set in Vercel), backend on Render (https://emmas-cookbook.onrender.com), database on Neon. The frontend's URL goes into the backend's `CORS_ALLOWED_ORIGINS` on Render
 - Creating the project: this folder already contains `CLAUDE.md`, so when `npm create vite@latest .` says the directory is not empty, choose to ignore the existing files (don't delete them)
 
 ## Auth
