@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
+import { Rosemary } from './Doodles'
 
 function Layout() {
   const { isAdmin, logout } = useAuth()
@@ -15,14 +16,19 @@ function Layout() {
       <header className="site-header">
         <div className="container header-inner">
           <Link to="/" className="brand">
-            RecipeBook
+            Emma&apos;s Cookbook
           </Link>
           <nav className="main-nav">
-            <NavLink to="/" end>
+            <NavLink to="/recipes" end>
               Recipes
             </NavLink>
             <NavLink to="/friends">Friends&apos; Recipes</NavLink>
             <NavLink to="/submit">Share a recipe</NavLink>
+            {!isAdmin && (
+              <NavLink to="/login" className="nav-signin">
+                Sign in
+              </NavLink>
+            )}
           </nav>
         </div>
         {isAdmin && (
@@ -44,12 +50,12 @@ function Layout() {
       </main>
 
       <footer className="site-footer">
-        <div className="container">
-          {!isAdmin && (
-            <Link to="/login" className="footer-link">
-              Admin
-            </Link>
-          )}
+        <div className="container footer-inner">
+          <Rosemary className="footer-doodle" />
+          <p className="dedication">
+            Made with love for Emma, the best cook I know. <span className="heart">♥</span>
+          </p>
+          <Rosemary className="footer-doodle footer-doodle-right" />
         </div>
       </footer>
     </div>

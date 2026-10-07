@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { submitFriendRecipe } from '../api/recipes'
 import RecipeForm from '../components/RecipeForm'
+import FormPageHeader from '../components/FormPageHeader'
 
 function SubmitRecipePage() {
   const [submittedBy, setSubmittedBy] = useState(null)
@@ -44,13 +45,10 @@ function SubmitRecipePage() {
 
   return (
     <section className="narrow">
-      <div className="page-heading">
-        <h1>Share a recipe</h1>
-        <p className="muted">
-          Have a vegetarian or vegan recipe you love? Share it and it will appear in Friends&apos;
-          Recipes.
-        </p>
-      </div>
+      <FormPageHeader kicker="From your kitchen to Emma's" title="Share a recipe">
+        Have a vegetarian or vegan recipe you love? Share it and it will appear in Friends&apos;
+        Recipes.
+      </FormPageHeader>
       <RecipeForm key={formKey} variant="friend" submitLabel="Share recipe" onSubmit={handleSubmit} />
     </section>
   )

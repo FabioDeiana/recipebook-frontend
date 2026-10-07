@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getRecipe, updateRecipe } from '../api/recipes'
 import { useApi } from '../hooks/useApi'
 import RecipeForm from '../components/RecipeForm'
+import FormPageHeader from '../components/FormPageHeader'
 import ErrorMessage from '../components/ErrorMessage'
 import NotFoundPage from './NotFoundPage'
 
@@ -25,7 +26,7 @@ function EditRecipePage() {
       <Link to={`/recipes/${recipe.slug}`} className="back-link">
         ← Back to recipe
       </Link>
-      <h1>Edit recipe</h1>
+      <FormPageHeader kicker="A little tweak" title="Edit recipe" />
       <RecipeForm key={recipe.id} recipe={recipe} submitLabel="Save changes" onSubmit={handleSubmit} />
     </section>
   )

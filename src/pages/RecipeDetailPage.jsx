@@ -4,8 +4,9 @@ import { adoptRecipe, deleteRecipe, getRecipe, markCooked, toggleFavorite } from
 import { useApi } from '../hooks/useApi'
 import { useAuth } from '../auth/useAuth'
 import ErrorMessage from '../components/ErrorMessage'
+import { RecipePlaceholder } from '../components/Doodles'
 import NotFoundPage from './NotFoundPage'
-import { formatDate, formatIngredient, formatMinutes, scaleQuantity } from '../utils/format'
+import { formatDate, formatMinutes, ingredientParts, scaleQuantity } from '../utils/format'
 
 function RecipeDetailPage() {
   const { slug } = useParams()
@@ -48,7 +49,7 @@ function RecipeDetailPage() {
     if (!window.confirm(`Delete "${recipe.title}"? This cannot be undone.`)) return
     runAction(async () => {
       await deleteRecipe(recipe.id)
-      navigate(recipe.section === 'FRIENDS' ? '/friends' : '/', { replace: true })
+      navigate(recipe.section === 'FRIENDS' ? '/friends' : '/recipes', { replace: true })
     })
   }
 
@@ -56,91 +57,117 @@ function RecipeDetailPage() {
     chosenServings.recipeId === recipe.id ? chosenServings.value : recipe.servings
   const setServings = (value) => setChosenServings({ recipeId: recipe.id, value })
   const isFriends = recipe.section === 'FRIENDS'
+  const listPath = isFriends ? '/friends' : '/recipes'
+  const totalMinutes =
+    recipe.prepTimeMinutes != null && recipe.cookTimeMinutes != null
+      ? recipe.prepTimeMinutes + recipe.cookTimeMinutes
+      : null
 
   return (
     <article className="recipe-detail">
-      <Link to={isFriends ? '/friends' : '/'} className="back-link">
+      <Link to={listPath} className="back-link">
         ← {isFriends ? 'Friends’ Recipes' : 'Recipes'}
       </Link>
 
-      <header className="recipe-header">
-        <div>
-          <span className="recipe-card-category">{recipe.category?.name}</span>
-          <h1>
-            {recipe.title}
-            {recipe.favorite && (
-              <span className="favorite-inline" title="Favorite">
-                {' '}
-                ♥
-              </span>
-            )}
-          </h1>
-          {recipe.authorName && <p className="muted">Shared by {recipe.authorName}</p>}
-          {recipe.adaptedFrom && <p className="muted">{recipe.adaptedFrom}</p>}
+      <header className="recipe-hero">
+        <div className="recipe-hero-image">
+          {recipe.imageUrl ? (
+            <img src={recipe.imageUrl} alt={recipe.title} />
+          ) : (
+            <div className="recipe-hero-placeholder" aria-hidden="true">
+              <RecipePlaceholder id={recipe.id} />
+            </div>
+          )}
+          {recipe.favorite && (
+            <span className="favorite-badge large" title="Favorite">
+              ♥
+            </span>
+          )}
         </div>
 
-        {isAdmin && (
+        <div className="recipe-hero-info">
+          {recipe.category && (
+            <Link to={`${listPath}?categoryId=${recipe.category.id}`} className="recipe-category-link">
+              {recipe.category.name}
+            </Link>
+          )}
+          <h1>{recipe.title}</h1>
+          {recipe.authorName && <p className="recipe-byline">Shared by {recipe.authorName}</p>}
+          {recipe.adaptedFrom && <p className="recipe-byline">{recipe.adaptedFrom}</p>}
+          {recipe.description && <p className="recipe-description">{recipe.description}</p>}
+
+          <dl className="recipe-stats">
+            <div>
+              <dt>Servings</dt>
+              <dd>{recipe.servings}</dd>
+            </div>
+            {recipe.prepTimeMinutes != null && (
+              <div>
+                <dt>Prep</dt>
+                <dd>{formatMinutes(recipe.prepTimeMinutes)}</dd>
+              </div>
+            )}
+            {recipe.cookTimeMinutes != null && (
+              <div>
+                <dt>Cook</dt>
+                <dd>{formatMinutes(recipe.cookTimeMinutes)}</dd>
+              </div>
+            )}
+            {totalMinutes != null && totalMinutes > 0 && (
+              <div>
+                <dt>Total</dt>
+                <dd>{formatMinutes(totalMinutes)}</dd>
+              </div>
+            )}
+            <div>
+              <dt>Last cooked</dt>
+              <dd>{recipe.lastCookedAt ? formatDate(recipe.lastCookedAt) : 'Never'}</dd>
+            </div>
+          </dl>
+
+          {recipe.tags.length > 0 && (
+            <ul className="tag-list">
+              {recipe.tags.map((tag) => (
+                <li key={tag.id}>
+                  <Link to={`${listPath}?tagId=${tag.id}`} className="tag">
+                    {tag.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </header>
+
+      {isAdmin && (
+        <div className="admin-toolbar">
+          <span className="admin-toolbar-label">Your tools</span>
           <div className="admin-actions">
             <Link to={`/admin/recipes/${recipe.slug}/edit`} className="button secondary">
-              Edit
+              ✎ Edit
             </Link>
             <button type="button" className="button secondary" disabled={busy} onClick={handleFavorite}>
               {recipe.favorite ? '♥ Unfavorite' : '♡ Favorite'}
             </button>
             <button type="button" className="button secondary" disabled={busy} onClick={handleCooked}>
-              Cooked today
+              ✓ Cooked today
             </button>
             {isFriends && (
               <button type="button" className="button secondary" disabled={busy} onClick={handleAdopt}>
-                Copy to my recipes
+                ⧉ Copy to my recipes
               </button>
             )}
             <button type="button" className="button danger" disabled={busy} onClick={handleDelete}>
               Delete
             </button>
           </div>
-        )}
-      </header>
+        </div>
+      )}
 
       <ErrorMessage error={actionError} />
 
-      {recipe.imageUrl && <img className="recipe-image" src={recipe.imageUrl} alt={recipe.title} />}
-
-      {recipe.description && <p className="recipe-description">{recipe.description}</p>}
-
-      <dl className="recipe-facts">
-        {recipe.prepTimeMinutes != null && (
-          <div>
-            <dt>Prep</dt>
-            <dd>{formatMinutes(recipe.prepTimeMinutes)}</dd>
-          </div>
-        )}
-        {recipe.cookTimeMinutes != null && (
-          <div>
-            <dt>Cook</dt>
-            <dd>{formatMinutes(recipe.cookTimeMinutes)}</dd>
-          </div>
-        )}
-        <div>
-          <dt>Last cooked</dt>
-          <dd>{recipe.lastCookedAt ? formatDate(recipe.lastCookedAt) : 'Never'}</dd>
-        </div>
-      </dl>
-
-      {recipe.tags.length > 0 && (
-        <ul className="tag-list">
-          {recipe.tags.map((tag) => (
-            <li key={tag.id}>
-              <Link to={`${isFriends ? '/friends' : '/'}?tagId=${tag.id}`} className="tag">
-                {tag.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-
       <div className="recipe-body">
-        <section className="ingredients">
+        <aside className="ingredients-card">
           <div className="ingredients-heading">
             <h2>Ingredients</h2>
             <div className="servings-control">
@@ -153,7 +180,7 @@ function RecipeDetailPage() {
                 −
               </button>
               <span>
-                {currentServings} {currentServings === 1 ? 'serving' : 'servings'}
+                <strong>{currentServings}</strong> {currentServings === 1 ? 'serving' : 'servings'}
               </span>
               <button
                 type="button"
@@ -166,34 +193,52 @@ function RecipeDetailPage() {
             </div>
           </div>
           {currentServings !== recipe.servings && (
-            <button type="button" className="link-button" onClick={() => setServings(recipe.servings)}>
+            <button
+              type="button"
+              className="link-button reset-servings"
+              onClick={() => setServings(recipe.servings)}
+            >
               Reset to {recipe.servings}
             </button>
           )}
           <ul className="ingredient-list">
-            {recipe.ingredients.map((ingredient) => (
-              <li key={ingredient.id}>
-                {formatIngredient({
-                  ...ingredient,
-                  quantity: scaleQuantity(
-                    ingredient.quantity,
-                    ingredient.unit,
-                    recipe.servings,
-                    currentServings,
-                  ),
-                })}
-              </li>
-            ))}
+            {recipe.ingredients.map((ingredient) => {
+              const parts = ingredientParts({
+                ...ingredient,
+                quantity: scaleQuantity(
+                  ingredient.quantity,
+                  ingredient.unit,
+                  recipe.servings,
+                  currentServings,
+                ),
+              })
+              return (
+                <li key={ingredient.id}>
+                  {parts.amount && <strong className="ingredient-amount">{parts.amount}</strong>}
+                  <span>
+                    {parts.name}
+                    {parts.suffix}
+                    {parts.note && <span className="ingredient-note-text"> ({parts.note})</span>}
+                  </span>
+                </li>
+              )
+            })}
           </ul>
-        </section>
+        </aside>
 
-        <section className="steps">
+        <section className="method">
           <h2>Method</h2>
           <ol className="step-list">
             {recipe.steps.map((step) => (
-              <li key={step.stepNumber}>{step.description}</li>
+              <li key={step.stepNumber}>
+                <span className="step-badge" aria-hidden="true">
+                  {step.stepNumber}
+                </span>
+                <p>{step.description}</p>
+              </li>
             ))}
           </ol>
+          <p className="enjoy-note">Enjoy your meal! ♥</p>
         </section>
       </div>
     </article>

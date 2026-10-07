@@ -12,19 +12,22 @@ export function formatQuantity(quantity) {
   return String(Number(quantity.toFixed(decimals)))
 }
 
-// e.g. "400 g chickpeas (cooked)", "2 onions", "salt, to taste"
-export function formatIngredient({ name, quantity, unit, note }) {
-  let text
+// Splits an ingredient for display: "400 g" + "chickpeas" + "" + "cooked",
+// "2" + "onions", "" + "salt" + ", to taste"
+export function ingredientParts({ name, quantity, unit, note }) {
+  let amount = ''
+  let suffix = ''
   if (unit === 'TO_TASTE') {
-    text = quantity != null ? `${formatQuantity(quantity)} ${name}, to taste` : `${name}, to taste`
+    amount = quantity != null ? formatQuantity(quantity) : ''
+    suffix = ', to taste'
   } else if (unit === 'PIECE') {
-    text = quantity != null ? `${formatQuantity(quantity)} ${name}` : name
+    amount = quantity != null ? formatQuantity(quantity) : ''
   } else if (quantity != null) {
-    text = `${formatQuantity(quantity)} ${unitLabel(unit, quantity)} ${name}`
+    amount = `${formatQuantity(quantity)} ${unitLabel(unit, quantity)}`
   } else {
-    text = `${name} (${unitLabel(unit)})`
+    suffix = ` (${unitLabel(unit)})`
   }
-  return note ? `${text} (${note})` : text
+  return { amount, name, suffix, note }
 }
 
 export function formatMinutes(minutes) {

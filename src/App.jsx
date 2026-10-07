@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import RequireAuth from './auth/RequireAuth'
 import Layout from './components/Layout'
+import HomePage from './pages/HomePage'
 import RecipeListPage from './pages/RecipeListPage'
 import RecipeDetailPage from './pages/RecipeDetailPage'
 import SubmitRecipePage from './pages/SubmitRecipePage'
@@ -17,7 +18,8 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route element={<Layout />}>
-          <Route index element={<RecipeListPage key="OWN" section="OWN" />} />
+          <Route index element={<HomePage />} />
+          <Route path="recipes" element={<RecipeListPage key="OWN" section="OWN" />} />
           <Route path="friends" element={<RecipeListPage key="FRIENDS" section="FRIENDS" />} />
           <Route path="recipes/:slug" element={<RecipeDetailPage />} />
           <Route path="submit" element={<SubmitRecipePage />} />

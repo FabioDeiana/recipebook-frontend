@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { formatMinutes } from '../utils/format'
+import { RecipePlaceholder } from './Doodles'
 
 function RecipeCard({ recipe }) {
   const totalMinutes = (recipe.prepTimeMinutes ?? 0) + (recipe.cookTimeMinutes ?? 0)
@@ -11,7 +12,7 @@ function RecipeCard({ recipe }) {
           <img src={recipe.imageUrl} alt="" loading="lazy" />
         ) : (
           <span className="image-placeholder" aria-hidden="true">
-            {recipe.title.charAt(0)}
+            <RecipePlaceholder id={recipe.id} />
           </span>
         )}
         {recipe.favorite && (

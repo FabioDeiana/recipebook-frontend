@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { createRecipe } from '../api/recipes'
 import RecipeForm from '../components/RecipeForm'
+import FormPageHeader from '../components/FormPageHeader'
 
 function NewRecipePage() {
   const navigate = useNavigate()
@@ -12,7 +13,7 @@ function NewRecipePage() {
 
   return (
     <section className="narrow">
-      <h1>New recipe</h1>
+      <FormPageHeader kicker="Something new in the kitchen" title="New recipe" />
       <RecipeForm submitLabel="Create recipe" onSubmit={handleSubmit} />
     </section>
   )

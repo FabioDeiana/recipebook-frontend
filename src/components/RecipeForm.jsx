@@ -4,6 +4,7 @@ import { useApi } from '../hooks/useApi'
 import { UNIT_GROUPS } from '../utils/units'
 import ErrorMessage from './ErrorMessage'
 import IngredientNameInput from './IngredientNameInput'
+import PhotoPicker from './PhotoPicker'
 
 const MAX_ITEMS = 30
 
@@ -98,10 +99,53 @@ function FieldError({ message }) {
   return message ? <span className="field-error">{message}</span> : null
 }
 
+function FormSection({ number, title, subtitle, children }) {
+  return (
+    <section className="form-section">
+      <header className="form-section-header">
+        <span className="form-section-number">{number}</span>
+        <div>
+          <h2>{title}</h2>
+          {subtitle && <p className="muted">{subtitle}</p>}
+        </div>
+      </header>
+      <div className="form-section-body">{children}</div>
+    </section>
+  )
+}
+
+function RowActions({ index, count, label, onMove, onRemove }) {
+  return (
+    <div className="row-actions">
+      <button type="button" aria-label="Move up" disabled={index === 0} onClick={() => onMove(-1)}>
+        ↑
+      </button>
+      <button
+        type="button"
+        aria-label="Move down"
+        disabled={index === count - 1}
+        onClick={() => onMove(1)}
+      >
+        ↓
+      </button>
+      <button
+        type="button"
+        className="remove"
+        aria-label={`Remove ${label}`}
+        disabled={count === 1}
+        onClick={onRemove}
+      >
+        ✕
+      </button>
+    </div>
+  )
+}
+
 function RecipeForm({ variant = 'admin', recipe, submitLabel, onSubmit }) {
   const isFriend = variant === 'friend'
   const [values, setValues] = useState(() => toFormValues(recipe))
   const [submitting, setSubmitting] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [error, setError] = useState(null)
   const errorRef = useRef(null)
 
@@ -109,6 +153,8 @@ function RecipeForm({ variant = 'admin', recipe, submitLabel, onSubmit }) {
   const tags = useApi(getTags, [])
 
   const fieldErrors = error?.errors ?? {}
+  let sectionNumber = 0
+  const nextSection = () => ++sectionNumber
 
   function setField(field, value) {
     setValues((prev) => ({ ...prev, [field]: value }))
@@ -160,7 +206,7 @@ function RecipeForm({ variant = 'admin', recipe, submitLabel, onSubmit }) {
   return (
     <form className="recipe-form" onSubmit={handleSubmit}>
       {isFriend && (
-        <>
+        <FormSection number={nextSection()} title="About you" subtitle="So everyone knows who to thank.">
           <div className="field">
             <label htmlFor="authorName">Your name *</label>
             <input
@@ -168,6 +214,7 @@ function RecipeForm({ variant = 'admin', recipe, submitLabel, onSubmit }) {
               type="text"
               required
               maxLength={50}
+              placeholder="e.g. Giulia"
               value={values.authorName}
               onChange={(e) => setField('authorName', e.target.value)}
             />
@@ -186,147 +233,163 @@ function RecipeForm({ variant = 'admin', recipe, submitLabel, onSubmit }) {
               onChange={(e) => setField('website', e.target.value)}
             />
           </div>
-        </>
+        </FormSection>
       )}
 
-      <div className="field">
-        <label htmlFor="title">Title *</label>
-        <input
-          id="title"
-          type="text"
-          required
-          maxLength={100}
-          value={values.title}
-          onChange={(e) => setField('title', e.target.value)}
-        />
-        <FieldError message={fieldErrors.title} />
-      </div>
-
-      <div className="field">
-        <label htmlFor="description">Description</label>
-        <textarea
-          id="description"
-          rows={3}
-          maxLength={2000}
-          value={values.description}
-          onChange={(e) => setField('description', e.target.value)}
-        />
-        <FieldError message={fieldErrors.description} />
-      </div>
-
-      <div className="field-row">
+      <FormSection number={nextSection()} title="The basics" subtitle="What are we cooking?">
         <div className="field">
-          <label htmlFor="servings">Servings *</label>
+          <label htmlFor="title">Title *</label>
           <input
-            id="servings"
-            type="number"
+            id="title"
+            type="text"
             required
-            min={1}
-            max={100}
-            value={values.servings}
-            onChange={(e) => setField('servings', e.target.value)}
+            maxLength={100}
+            placeholder="e.g. Pasta e ceci"
+            value={values.title}
+            onChange={(e) => setField('title', e.target.value)}
           />
-          <FieldError message={fieldErrors.servings} />
+          <FieldError message={fieldErrors.title} />
         </div>
-        <div className="field">
-          <label htmlFor="prepTimeMinutes">Prep time (min)</label>
-          <input
-            id="prepTimeMinutes"
-            type="number"
-            min={0}
-            value={values.prepTimeMinutes}
-            onChange={(e) => setField('prepTimeMinutes', e.target.value)}
-          />
-          <FieldError message={fieldErrors.prepTimeMinutes} />
-        </div>
-        <div className="field">
-          <label htmlFor="cookTimeMinutes">Cook time (min)</label>
-          <input
-            id="cookTimeMinutes"
-            type="number"
-            min={0}
-            value={values.cookTimeMinutes}
-            onChange={(e) => setField('cookTimeMinutes', e.target.value)}
-          />
-          <FieldError message={fieldErrors.cookTimeMinutes} />
-        </div>
-      </div>
 
-      <div className="field">
-        <label htmlFor="categoryId">Category *</label>
-        <select
-          id="categoryId"
-          required
-          value={values.categoryId}
-          onChange={(e) => setField('categoryId', e.target.value)}
-        >
-          <option value="">Choose a category…</option>
-          {categories.data?.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-        <FieldError message={fieldErrors.categoryId} />
-      </div>
+        <div className="field">
+          <label htmlFor="description">Description</label>
+          <textarea
+            id="description"
+            rows={3}
+            maxLength={2000}
+            placeholder="A few words about this recipe…"
+            value={values.description}
+            onChange={(e) => setField('description', e.target.value)}
+          />
+          <FieldError message={fieldErrors.description} />
+        </div>
 
-      {tags.data?.length > 0 && (
-        <fieldset className="field">
-          <legend>Tags</legend>
-          <div className="tag-picker">
-            {tags.data.map((tag) => (
-              <label key={tag.id} className={`tag-option${values.tagIds.includes(tag.id) ? ' selected' : ''}`}>
-                <input
-                  type="checkbox"
-                  checked={values.tagIds.includes(tag.id)}
-                  onChange={() => toggleTag(tag.id)}
-                />
-                {tag.name}
-              </label>
+        <div className="field">
+          <label htmlFor="categoryId">Category *</label>
+          <select
+            id="categoryId"
+            required
+            value={values.categoryId}
+            onChange={(e) => setField('categoryId', e.target.value)}
+          >
+            <option value="">Choose a category…</option>
+            {categories.data?.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
             ))}
-          </div>
-          <FieldError message={fieldErrors.tagIds} />
-        </fieldset>
-      )}
+          </select>
+          <FieldError message={fieldErrors.categoryId} />
+        </div>
 
-      <div className="field">
-        <label htmlFor="imageUrl">Image URL</label>
-        <input
-          id="imageUrl"
-          type="url"
-          maxLength={255}
-          placeholder="https://…"
+        {tags.data?.length > 0 && (
+          <fieldset className="field">
+            <legend>Tags</legend>
+            <div className="tag-picker">
+              {tags.data.map((tag) => (
+                <label
+                  key={tag.id}
+                  className={`tag-option${values.tagIds.includes(tag.id) ? ' selected' : ''}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={values.tagIds.includes(tag.id)}
+                    onChange={() => toggleTag(tag.id)}
+                  />
+                  {tag.name}
+                </label>
+              ))}
+            </div>
+            <FieldError message={fieldErrors.tagIds} />
+          </fieldset>
+        )}
+
+        {!isFriend && (
+          <div className="field">
+            <label htmlFor="adaptedFrom">Adapted from</label>
+            <input
+              id="adaptedFrom"
+              type="text"
+              maxLength={255}
+              placeholder="e.g. Adapted from Giulia's recipe"
+              value={values.adaptedFrom}
+              onChange={(e) => setField('adaptedFrom', e.target.value)}
+            />
+            <FieldError message={fieldErrors.adaptedFrom} />
+          </div>
+        )}
+      </FormSection>
+
+      <FormSection number={nextSection()} title="Servings & time">
+        <div className="field-row">
+          <div className="field stat-field">
+            <label htmlFor="servings">Servings *</label>
+            <input
+              id="servings"
+              type="number"
+              required
+              min={1}
+              max={100}
+              value={values.servings}
+              onChange={(e) => setField('servings', e.target.value)}
+            />
+            <FieldError message={fieldErrors.servings} />
+          </div>
+          <div className="field stat-field">
+            <label htmlFor="prepTimeMinutes">Prep (minutes)</label>
+            <input
+              id="prepTimeMinutes"
+              type="number"
+              min={0}
+              placeholder="—"
+              value={values.prepTimeMinutes}
+              onChange={(e) => setField('prepTimeMinutes', e.target.value)}
+            />
+            <FieldError message={fieldErrors.prepTimeMinutes} />
+          </div>
+          <div className="field stat-field">
+            <label htmlFor="cookTimeMinutes">Cook (minutes)</label>
+            <input
+              id="cookTimeMinutes"
+              type="number"
+              min={0}
+              placeholder="—"
+              value={values.cookTimeMinutes}
+              onChange={(e) => setField('cookTimeMinutes', e.target.value)}
+            />
+            <FieldError message={fieldErrors.cookTimeMinutes} />
+          </div>
+        </div>
+      </FormSection>
+
+      <FormSection number={nextSection()} title="Photo" subtitle="Optional, but it makes the recipe shine.">
+        <PhotoPicker
           value={values.imageUrl}
-          onChange={(e) => setField('imageUrl', e.target.value)}
+          onChange={(url) => setField('imageUrl', url)}
+          onUploadingChange={setUploadingPhoto}
         />
         <FieldError message={fieldErrors.imageUrl} />
-      </div>
+      </FormSection>
 
-      {!isFriend && (
-        <div className="field">
-          <label htmlFor="adaptedFrom">Adapted from</label>
-          <input
-            id="adaptedFrom"
-            type="text"
-            maxLength={255}
-            placeholder="e.g. Adapted from Giulia's recipe"
-            value={values.adaptedFrom}
-            onChange={(e) => setField('adaptedFrom', e.target.value)}
-          />
-          <FieldError message={fieldErrors.adaptedFrom} />
-        </div>
-      )}
-
-      <fieldset className="field">
-        <legend>Ingredients *</legend>
+      <FormSection
+        number={nextSection()}
+        title="Ingredients"
+        subtitle="Start typing to pick an ingredient that already exists."
+      >
         <FieldError message={fieldErrors.ingredients} />
+        <div className="ingredient-header" aria-hidden="true">
+          <span>Ingredient</span>
+          <span>Qty</span>
+          <span>Unit</span>
+          <span>Note</span>
+        </div>
         <div className="ingredient-rows">
           {values.ingredients.map((ingredient, index) => (
             <div key={ingredient.key} className="ingredient-row">
               <div className="ingredient-inputs">
                 <IngredientNameInput
                   className="ingredient-name"
-                  placeholder="Ingredient"
+                  placeholder="e.g. chickpeas"
                   aria-label={`Ingredient ${index + 1} name`}
                   required
                   maxLength={100}
@@ -369,32 +432,13 @@ function RecipeForm({ variant = 'admin', recipe, submitLabel, onSubmit }) {
                   onChange={(e) => updateItem('ingredients', index, { note: e.target.value })}
                 />
               </div>
-              <div className="row-actions">
-                <button
-                  type="button"
-                  aria-label="Move up"
-                  disabled={index === 0}
-                  onClick={() => moveItem('ingredients', index, -1)}
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  aria-label="Move down"
-                  disabled={index === values.ingredients.length - 1}
-                  onClick={() => moveItem('ingredients', index, 1)}
-                >
-                  ↓
-                </button>
-                <button
-                  type="button"
-                  aria-label="Remove ingredient"
-                  disabled={values.ingredients.length === 1}
-                  onClick={() => removeItem('ingredients', index)}
-                >
-                  ✕
-                </button>
-              </div>
+              <RowActions
+                index={index}
+                count={values.ingredients.length}
+                label="ingredient"
+                onMove={(offset) => moveItem('ingredients', index, offset)}
+                onRemove={() => removeItem('ingredients', index)}
+              />
               <FieldError message={fieldErrors[`ingredients[${index}].name`]} />
               <FieldError message={fieldErrors[`ingredients[${index}].quantity`]} />
               <FieldError message={fieldErrors[`ingredients[${index}].unit`]} />
@@ -404,84 +448,65 @@ function RecipeForm({ variant = 'admin', recipe, submitLabel, onSubmit }) {
         </div>
         <button
           type="button"
-          className="button secondary"
+          className="add-row"
           disabled={values.ingredients.length >= MAX_ITEMS}
           onClick={() => addItem('ingredients', emptyIngredient)}
         >
           + Add ingredient
         </button>
-      </fieldset>
+      </FormSection>
 
-      <fieldset className="field">
-        <legend>Steps *</legend>
+      <FormSection number={nextSection()} title="Method" subtitle="One step at a time.">
         <FieldError message={fieldErrors.steps} />
         <ol className="step-rows">
           {values.steps.map((step, index) => (
             <li key={step.key} className="step-row">
-              <div className="step-input">
-                <textarea
-                  rows={2}
-                  required
-                  maxLength={2000}
-                  aria-label={`Step ${index + 1}`}
-                  placeholder={`Step ${index + 1}`}
-                  value={step.description}
-                  onChange={(e) => updateItem('steps', index, { description: e.target.value })}
-                />
-                <div className="row-actions">
-                  <button
-                    type="button"
-                    aria-label="Move up"
-                    disabled={index === 0}
-                    onClick={() => moveItem('steps', index, -1)}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Move down"
-                    disabled={index === values.steps.length - 1}
-                    onClick={() => moveItem('steps', index, 1)}
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Remove step"
-                    disabled={values.steps.length === 1}
-                    onClick={() => removeItem('steps', index)}
-                  >
-                    ✕
-                  </button>
+              <span className="step-number" aria-hidden="true">
+                {index + 1}
+              </span>
+              <div className="step-content">
+                <div className="step-input">
+                  <textarea
+                    rows={2}
+                    required
+                    maxLength={2000}
+                    aria-label={`Step ${index + 1}`}
+                    placeholder={index === 0 ? 'e.g. Warm the chickpeas in a pan…' : 'Then…'}
+                    value={step.description}
+                    onChange={(e) => updateItem('steps', index, { description: e.target.value })}
+                  />
+                  <RowActions
+                    index={index}
+                    count={values.steps.length}
+                    label="step"
+                    onMove={(offset) => moveItem('steps', index, offset)}
+                    onRemove={() => removeItem('steps', index)}
+                  />
                 </div>
+                <FieldError message={fieldErrors[`steps[${index}].description`]} />
               </div>
-              <FieldError message={fieldErrors[`steps[${index}].description`]} />
             </li>
           ))}
         </ol>
         <button
           type="button"
-          className="button secondary"
+          className="add-row"
           disabled={values.steps.length >= MAX_ITEMS}
           onClick={() => addItem('steps', emptyStep)}
         >
           + Add step
         </button>
-      </fieldset>
+      </FormSection>
 
       <div ref={errorRef}>
         <ErrorMessage
-          error={
-            error?.status === 400 && error.errors
-              ? 'Please fix the highlighted fields.'
-              : error
-          }
+          error={error?.status === 400 && error.errors ? 'Please fix the highlighted fields.' : error}
         />
       </div>
 
       <div className="form-actions">
-        <button type="submit" className="button" disabled={submitting}>
-          {submitting ? 'Saving…' : submitLabel}
+        <button type="submit" className="button button-large" disabled={submitting || uploadingPhoto}>
+          {submitting ? 'Saving…' : uploadingPhoto ? 'Uploading photo…' : submitLabel}
         </button>
       </div>
     </form>

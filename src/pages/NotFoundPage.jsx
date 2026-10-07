@@ -6,7 +6,7 @@ function NotFoundPage({ message = "This page doesn't exist." }) {
       <h1>Not found</h1>
       <p className="muted">{message}</p>
       <Link to="/" className="button">
-        Back to recipes
+        Back to home
       </Link>
     </section>
   )
