@@ -13,7 +13,9 @@ function SubmitRecipePage() {
       await submitFriendRecipe(payload)
     } catch (err) {
       if (err.status === 429) {
-        throw new Error("You've shared a lot of recipes in the last hour. Please try again later!")
+        const minutes = err.retryAfter ? Math.ceil(err.retryAfter / 60) : null
+        const when = minutes ? `in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}` : 'later'
+        throw new Error(`You've shared a lot of recipes in the last hour. Please try again ${when}!`)
       }
       throw err
     }

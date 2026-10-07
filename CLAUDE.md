@@ -13,8 +13,10 @@ The backend is a separate, finished project (Spring Boot) in `C:\Users\fdeia\Des
 
 ## Stack
 
-- React + Vite, dev server on http://localhost:5173 (the only origin the backend's CORS allows)
+- React + Vite, dev server on http://localhost:5173 (the backend's default CORS origin)
 - Backend on http://localhost:8080 — keep the base URL in `.env` as `VITE_API_URL=http://localhost:8080`, never hardcode it
+- Images: uploaded from the browser straight to Cloudinary (unsigned preset), see `src/api/cloudinary.js`; `.env` has `VITE_CLOUDINARY_CLOUD_NAME` and `VITE_CLOUDINARY_UPLOAD_PRESET`. The backend only stores the URL in `imageUrl` (max 255)
+- Deploy: Netlify; `public/_redirects` sends every path to `index.html` for client-side routing. Online, the `VITE_*` variables are set in Netlify, and the frontend's URL goes into the backend's `CORS_ALLOWED_ORIGINS`
 - Creating the project: this folder already contains `CLAUDE.md`, so when `npm create vite@latest .` says the directory is not empty, choose to ignore the existing files (don't delete them)
 
 ## Auth
@@ -84,7 +86,7 @@ Response:
 - `steps [{ stepNumber, description }]` — ordered, numbered from 1
 
 Dates: `lastCookedAt` is `"YYYY-MM-DD"` or `null`; `createdAt` / `updatedAt` are local date-times without timezone.
-`authorName` is set only for `FRIENDS` recipes. `adaptedFrom` is e.g. `"Adapted from Giulia's recipe"` or `null`. `imageUrl` is a plain URL string or `null` (image upload comes later).
+`authorName` is set only for `FRIENDS` recipes. `adaptedFrom` is e.g. `"Adapted from Giulia's recipe"` or `null`. `imageUrl` is a plain URL string or `null`.
 
 ### Admin actions (protected)
 
@@ -130,7 +132,7 @@ Ingredients are matched by name (case-insensitive); unknown ones are created aut
 - `authorName` — required, max 50
 - `website` — **honeypot**: render it as a hidden field that humans don't see or tab into, always send it empty. If filled, the backend answers `201` but silently drops the recipe.
 
-Categories and tags must be existing ones (friends can't create new ones). Max **5 submissions per hour per IP**: over the limit → `429 { message }` with a `Retry-After` header (seconds) — show a friendly "try again later".
+Categories and tags must be existing ones (friends can't create new ones). Max **5 submissions per hour per IP**: over the limit → `429 { message }` with a `Retry-After` header (seconds, readable thanks to CORS `exposedHeaders`) — show a friendly "try again in N minutes".
 
 ## Categories, tags, ingredients
 
@@ -147,6 +149,4 @@ Categories and tags must be existing ones (friends can't create new ones). Max *
 
 ## Later (not now)
 
-- Image upload with Cloudinary (for now `imageUrl` is a plain string)
 - Optional AI recipe import
-- Deploy (Koyeb or similar for the backend, online PostgreSQL); the frontend's production origin will then have to be added to the backend's `cors.allowed-origins`
