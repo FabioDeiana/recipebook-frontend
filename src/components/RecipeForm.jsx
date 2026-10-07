@@ -5,6 +5,7 @@ import { UNIT_GROUPS } from '../utils/units'
 import ErrorMessage from './ErrorMessage'
 import IngredientNameInput from './IngredientNameInput'
 import PhotoPicker from './PhotoPicker'
+import { parseQuantity, quantityToInput } from '../utils/quantity'
 
 const MAX_ITEMS = 30
 
@@ -51,7 +52,7 @@ function toFormValues(recipe) {
     ingredients: recipe.ingredients.map((ingredient) => ({
       key: newKey(),
       name: ingredient.name,
-      quantity: toInput(ingredient.quantity),
+      quantity: quantityToInput(ingredient.quantity, ingredient.unit),
       unit: ingredient.unit,
       note: toInput(ingredient.note),
     })),
@@ -72,7 +73,7 @@ function toPayload(values, isFriend) {
     tagIds: values.tagIds,
     ingredients: values.ingredients.map((ingredient) => ({
       name: ingredient.name,
-      quantity: toNumber(ingredient.quantity),
+      quantity: parseQuantity(ingredient.quantity),
       unit: ingredient.unit,
       note: ingredient.note,
     })),
@@ -188,16 +189,33 @@ function RecipeForm({ variant = 'admin', recipe, submitLabel, onSubmit }) {
     }))
   }
 
+  function showError(err) {
+    setError(err)
+    requestAnimationFrame(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
+
+    // Quantities are free text (fractions allowed): check them before sending
+    const quantityErrors = {}
+    values.ingredients.forEach((ingredient, index) => {
+      if (Number.isNaN(parseQuantity(ingredient.quantity))) {
+        quantityErrors[`ingredients[${index}].quantity`] = 'Use a number like 2, 0.5, 1/3 or 1 1/2'
+      }
+    })
+    if (Object.keys(quantityErrors).length > 0) {
+      showError({ status: 400, message: 'Validation failed', errors: quantityErrors })
+      return
+    }
+
     setSubmitting(true)
     setError(null)
     try {
       await onSubmit(toPayload(values, isFriend))
     } catch (err) {
-      setError(err)
       setSubmitting(false)
-      requestAnimationFrame(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+      showError(err)
       return
     }
     setSubmitting(false)
@@ -398,10 +416,9 @@ function RecipeForm({ variant = 'admin', recipe, submitLabel, onSubmit }) {
                 />
                 <input
                   className="ingredient-quantity"
-                  type="number"
-                  min="0"
-                  step="any"
-                  placeholder="Qty"
+                  type="text"
+                  autoComplete="off"
+                  placeholder="e.g. 1/3"
                   aria-label={`Ingredient ${index + 1} quantity`}
                   value={ingredient.quantity}
                   onChange={(e) => updateItem('ingredients', index, { quantity: e.target.value })}

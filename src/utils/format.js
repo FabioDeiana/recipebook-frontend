@@ -1,15 +1,10 @@
 import { unitLabel } from './units'
+import { formatQuantity } from './quantity'
 
 // Serving scaling: quantity * newServings / servings; TO_TASTE and null stay unchanged
 export function scaleQuantity(quantity, unit, servings, newServings) {
   if (quantity == null || unit === 'TO_TASTE') return quantity
   return (quantity * newServings) / servings
-}
-
-export function formatQuantity(quantity) {
-  if (quantity == null) return ''
-  const decimals = quantity >= 100 ? 0 : quantity >= 10 ? 1 : 2
-  return String(Number(quantity.toFixed(decimals)))
 }
 
 // Splits an ingredient for display: "400 g" + "chickpeas" + "" + "cooked",
@@ -18,12 +13,12 @@ export function ingredientParts({ name, quantity, unit, note }) {
   let amount = ''
   let suffix = ''
   if (unit === 'TO_TASTE') {
-    amount = quantity != null ? formatQuantity(quantity) : ''
+    amount = quantity != null ? formatQuantity(quantity, unit) : ''
     suffix = ', to taste'
   } else if (unit === 'PIECE') {
-    amount = quantity != null ? formatQuantity(quantity) : ''
+    amount = quantity != null ? formatQuantity(quantity, unit) : ''
   } else if (quantity != null) {
-    amount = `${formatQuantity(quantity)} ${unitLabel(unit, quantity)}`
+    amount = `${formatQuantity(quantity, unit)} ${unitLabel(unit, quantity)}`
   } else {
     suffix = ` (${unitLabel(unit)})`
   }
